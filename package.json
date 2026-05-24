@@ -1,12 +1,20 @@
 {
   "name": "rive-preview",
-  "module": "index.ts",
+  "module": "index.html",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun --hot ./index.html",
+    "build": "bun build --compile --target=browser ./index.html --outdir=dist"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@rive-app/webgl2": "^2.37.8",
+    "lucide": "^1.16.0"
   }
 }

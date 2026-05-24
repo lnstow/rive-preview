@@ -83,7 +83,8 @@ select {
 
 button,
 select,
-.dropzone {
+.dropzone,
+.github-link {
   transition:
     background 140ms ease,
     box-shadow 140ms ease,
@@ -143,6 +144,41 @@ select,
 .brand-stack {
   position: relative;
   min-width: 0;
+}
+
+.topbar-actions {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 58px auto;
+  gap: 12px;
+  align-items: start;
+  justify-self: end;
+}
+
+.github-link {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  box-shadow: var(--short-shadow);
+  color: var(--ink);
+  text-decoration: none;
+  transform: rotate(-3deg);
+}
+
+.github-link svg {
+  width: 31px;
+  height: 31px;
+}
+
+.github-link:hover {
+  background: var(--pink);
+  box-shadow: 7px 7px 0 var(--ink);
+  color: #fff;
+  transform: translate(-2px, -2px) rotate(3deg);
 }
 
 .upload-arrow {
@@ -482,7 +518,8 @@ select:not(:disabled):active {
 
 select:not(:disabled):focus,
 .icon-button:not(:disabled):focus-visible,
-.dropzone:focus-within {
+.dropzone:focus-within,
+.github-link:focus-visible {
   outline: 3px solid var(--violet);
   outline-offset: 3px;
 }
@@ -1034,8 +1071,17 @@ canvas {
   }
 
   .status-pill {
-    justify-self: start;
     transform: rotate(-1deg);
+  }
+
+  .topbar-actions {
+    grid-template-columns: 52px auto;
+    justify-self: start;
+  }
+
+  .github-link {
+    width: 52px;
+    height: 52px;
   }
 
   .preview-pane {

@@ -6,7 +6,6 @@ import {
   Rive,
   RiveFile,
   StateMachineInputType,
-  type Bounds,
   type RiveParameters,
   type RiveResetParameters,
   type ViewModelInstance,
@@ -70,18 +69,7 @@ interface RuntimeInfo {
   activeArtboard: string;
   artboardWidth: number;
   artboardHeight: number;
-  bounds?: Bounds;
-  fps: number;
-  frameTime: string;
   isPlaying: boolean;
-  isPaused: boolean;
-  isStopped: boolean;
-  volume: number;
-  devicePixelRatioUsed: number;
-  playingAnimationNames: string[];
-  playingStateMachineNames: string[];
-  pausedAnimationNames: string[];
-  pausedStateMachineNames: string[];
 }
 
 interface RiveMetadata {
@@ -117,8 +105,6 @@ const artboardSelect = getElement<HTMLSelectElement>("artboardSelect");
 const motionSelect = getElement<HTMLSelectElement>("motionSelect");
 const fitSelect = getElement<HTMLSelectElement>("fitSelect");
 const playButton = getElement<HTMLButtonElement>("playButton");
-const pauseButton = getElement<HTMLButtonElement>("pauseButton");
-const stopButton = getElement<HTMLButtonElement>("stopButton");
 
 let activeRive: Rive | null = null;
 let activeRiveFile: RiveFile | null = null;
@@ -183,17 +169,15 @@ fitSelect.addEventListener("change", () => {
 });
 
 playButton.addEventListener("click", () => {
-  activeRive?.play();
-  refreshMetadata();
-});
+  if (!activeRive) {
+    return;
+  }
 
-pauseButton.addEventListener("click", () => {
-  activeRive?.pause();
-  refreshMetadata();
-});
-
-stopButton.addEventListener("click", () => {
-  activeRive?.stop();
+  if (safeValue(() => activeRive?.isPlaying ?? false, false)) {
+    activeRive.pause();
+  } else {
+    activeRive.play();
+  }
   refreshMetadata();
 });
 
@@ -211,7 +195,7 @@ async function loadFile(file: File): Promise<void> {
 
   setStatus("读取中", "busy");
   setControlsEnabled(false);
-  emptyState.hidden = false;
+  emptyState.hidden = true;
   currentFile = {
     fileName: file.name,
     fileSize: file.size,
@@ -409,18 +393,7 @@ function collectMetadata(rive: Rive, file: FileContext): RiveMetadata {
       activeArtboard: safeValue(() => rive.activeArtboard, ""),
       artboardWidth: safeNumber(() => rive.artboardWidth),
       artboardHeight: safeNumber(() => rive.artboardHeight),
-      bounds: safeOptional(() => rive.bounds),
-      fps: safeNumber(() => rive.fps),
-      frameTime: String(safeValue(() => rive.frameTime, 0)),
       isPlaying: safeValue(() => rive.isPlaying, false),
-      isPaused: safeValue(() => rive.isPaused, false),
-      isStopped: safeValue(() => rive.isStopped, false),
-      volume: safeNumber(() => rive.volume),
-      devicePixelRatioUsed: safeNumber(() => rive.devicePixelRatioUsed),
-      playingAnimationNames: [...safeValue(() => rive.playingAnimationNames, [])],
-      playingStateMachineNames: [...safeValue(() => rive.playingStateMachineNames, [])],
-      pausedAnimationNames: [...safeValue(() => rive.pausedAnimationNames, [])],
-      pausedStateMachineNames: [...safeValue(() => rive.pausedStateMachineNames, [])],
     },
   };
 }
@@ -543,10 +516,10 @@ function parseMotionValue(value: string): MotionSelection {
 function renderMetadata(metadata: RiveMetadata): void {
   propertiesPanel.replaceChildren();
   propertyCount.textContent = `${countProperties(metadata)} 项`;
+  syncPlaybackButton(metadata.runtime);
 
   propertiesPanel.append(
     renderMetrics(metadata),
-    renderRuntime(metadata.runtime),
     renderArtboards(metadata.artboards, metadata.runtime.activeArtboard),
     renderViewModels(metadata.viewModels, metadata.boundInstance),
     renderDataEnums(metadata.dataEnums),
@@ -560,32 +533,13 @@ function renderMetrics(metadata: RiveMetadata): HTMLElement {
   grid.append(
     createMetric("名称", metadata.fileName),
     createMetric("大小", formatBytes(metadata.fileSize)),
-    createMetric("修改时间", formatDate(metadata.fileModified)),
     createMetric("画板", String(metadata.artboards.length)),
+    createMetric("stateMachineCount", String(countStateMachines(metadata.artboards))),
     createMetric("ViewModel", String(metadata.viewModels.length)),
-    createMetric("Enums", String(metadata.dataEnums.length)),
+    createMetric("Artboard Size", `${formatNumber(metadata.runtime.artboardWidth)} × ${formatNumber(metadata.runtime.artboardHeight)}`),
   );
 
   section.append(grid);
-  return section;
-}
-
-function renderRuntime(runtime: RuntimeInfo): HTMLElement {
-  const section = createSection("运行时");
-  const grid = createElement("div", "key-grid");
-
-  appendKeyValue(grid, "Active Artboard", runtime.activeArtboard || "—");
-  appendKeyValue(grid, "Artboard Size", `${formatNumber(runtime.artboardWidth)} × ${formatNumber(runtime.artboardHeight)}`);
-  appendKeyValue(grid, "Bounds", formatBounds(runtime.bounds));
-  appendKeyValue(grid, "Playback", playbackState(runtime));
-  appendKeyValue(grid, "FPS", formatNumber(runtime.fps));
-  appendKeyValue(grid, "Frame Time", runtime.frameTime);
-  appendKeyValue(grid, "Volume", formatNumber(runtime.volume));
-  appendKeyValue(grid, "DPR", formatNumber(runtime.devicePixelRatioUsed));
-
-  section.append(grid);
-  section.append(renderNameRow("Playing", [...runtime.playingStateMachineNames, ...runtime.playingAnimationNames], "无"));
-  section.append(renderNameRow("Paused", [...runtime.pausedStateMachineNames, ...runtime.pausedAnimationNames], "无"));
   return section;
 }
 
@@ -759,21 +713,26 @@ function createEmptyLine(text: string): HTMLElement {
   return createElement("p", "empty-line", text);
 }
 
-function appendKeyValue(parent: HTMLElement, key: string, value: string): void {
-  const item = createElement("div", "key-value");
-  item.append(createElement("span", undefined, key), createElement("strong", undefined, value));
-  parent.append(item);
-}
-
 function setStatus(text: string, tone: Tone): void {
   statusPill.textContent = text;
   statusPill.dataset.tone = tone;
 }
 
 function setControlsEnabled(enabled: boolean): void {
-  for (const control of [artboardSelect, motionSelect, fitSelect, playButton, pauseButton, stopButton]) {
+  for (const control of [artboardSelect, motionSelect, fitSelect, playButton]) {
     control.disabled = !enabled;
   }
+
+  if (!enabled) {
+    syncPlaybackButton();
+  }
+}
+
+function syncPlaybackButton(runtime?: RuntimeInfo): void {
+  const label = runtime?.isPlaying ? "暂停" : "播放";
+  playButton.title = label;
+  playButton.setAttribute("aria-label", label);
+  playButton.querySelector("span")?.replaceChildren(document.createTextNode(runtime?.isPlaying ? "\u275A\u275A" : "\u25B6"));
 }
 
 function inputTypeName(type: StateMachineInputType): string {
@@ -801,25 +760,8 @@ function countProperties(metadata: RiveMetadata): number {
   return metadata.artboards.length + inputCount + viewModelPropertyCount + enumValueCount + boundCount;
 }
 
-function playbackState(runtime: RuntimeInfo): string {
-  if (runtime.isPlaying) {
-    return "playing";
-  }
-  if (runtime.isPaused) {
-    return "paused";
-  }
-  if (runtime.isStopped) {
-    return "stopped";
-  }
-  return "ready";
-}
-
-function formatBounds(bounds: Bounds | undefined): string {
-  if (!bounds) {
-    return "—";
-  }
-
-  return `${formatNumber(bounds.minX)}, ${formatNumber(bounds.minY)} · ${formatNumber(bounds.maxX)}, ${formatNumber(bounds.maxY)}`;
+function countStateMachines(artboards: ArtboardInfo[]): number {
+  return artboards.reduce((total, artboard) => total + artboard.stateMachines.length, 0);
 }
 
 function formatBytes(bytes: number): string {

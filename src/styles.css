@@ -237,7 +237,7 @@ button:disabled {
 
 .button-group {
   display: grid;
-  grid-template-columns: repeat(3, 38px);
+  grid-template-columns: 38px;
   gap: 6px;
 }
 
@@ -289,6 +289,10 @@ canvas {
   gap: 8px;
   color: #60736d;
   pointer-events: none;
+}
+
+.empty-state[hidden] {
+  display: none;
 }
 
 .empty-state strong {
@@ -568,7 +572,7 @@ canvas {
   }
 
   .button-group {
-    grid-template-columns: repeat(3, minmax(38px, 1fr));
+    grid-template-columns: minmax(38px, 1fr);
   }
 
   .icon-button {

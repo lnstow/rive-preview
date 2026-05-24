@@ -147,36 +147,17 @@ select,
 
 .upload-arrow {
   position: absolute;
-  left: clamp(220px, 34vw, 560px);
-  bottom: -104px;
+  left: clamp(300px, 38vw, 690px);
+  bottom: -80px;
   z-index: 8;
-  width: 96px;
-  height: 86px;
-  border-right: 8px solid var(--ink);
-  border-bottom: 8px solid var(--ink);
-  filter: drop-shadow(5px 5px 0 var(--pink));
+  color: var(--ink);
+  font-family: "Segoe UI Symbol", "Arial Black", Impact, sans-serif;
+  font-size: clamp(7rem, 12vw, 12.5rem);
+  font-weight: 950;
+  line-height: 0.7;
   pointer-events: none;
-  transform: rotate(10deg);
-}
-
-.upload-arrow::before,
-.upload-arrow::after {
-  position: absolute;
-  right: -12px;
-  bottom: -10px;
-  width: 34px;
-  height: 8px;
-  background: var(--ink);
-  content: "";
-  transform-origin: right center;
-}
-
-.upload-arrow::before {
-  transform: rotate(45deg);
-}
-
-.upload-arrow::after {
-  transform: rotate(-45deg);
+  text-shadow: 7px 7px 0 var(--pink);
+  transform: rotate(26deg);
 }
 
 .eyebrow {
@@ -1039,13 +1020,12 @@ canvas {
   }
 
   .upload-arrow {
-    right: 38px;
-    bottom: -78px;
+    right: 24px;
+    bottom: -102px;
     left: auto;
-    width: 62px;
-    height: 58px;
-    border-right-width: 7px;
-    border-bottom-width: 7px;
+    font-size: 6.8rem;
+    text-shadow: 5px 5px 0 var(--pink);
+    transform: rotate(13deg);
   }
 
   h1 {

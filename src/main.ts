@@ -190,12 +190,12 @@ resizeObserver.observe(canvasStage);
 
 async function loadFile(file: File): Promise<void> {
   if (!file.name.toLowerCase().endsWith(".riv")) {
-    setStatus("文件类型不匹配", "error");
-    renderError("请选择 .riv 文件。");
+    setStatus("Unsupported file", "error");
+    renderError("Please choose a .riv file.");
     return;
   }
 
-  setStatus("读取中", "busy");
+  setStatus("Loading", "busy");
   setControlsEnabled(false);
   emptyState.hidden = true;
   currentFile = {
@@ -217,8 +217,8 @@ async function loadFile(file: File): Promise<void> {
     await createPreview(riveFile, initialSelection);
   } catch (error) {
     cleanupActiveRive();
-    setStatus("载入失败", "error");
-    renderError(error instanceof Error ? error.message : "Rive 文件载入失败。");
+    setStatus("Load failed", "error");
+    renderError(error instanceof Error ? error.message : "Failed to load the Rive file.");
   }
 }
 
@@ -237,7 +237,7 @@ function createPreview(riveFile: RiveFile, selection: InitialSelection): Promise
       }),
       onLoad: () => {
         if (!activeRive || !currentFile) {
-          reject(new Error("Rive 预览实例未初始化。"));
+          reject(new Error("Rive preview instance was not initialized."));
           return;
         }
 
@@ -248,11 +248,11 @@ function createPreview(riveFile: RiveFile, selection: InitialSelection): Promise
         renderMetadata(currentMetadata);
         emptyState.hidden = true;
         setControlsEnabled(true);
-        setStatus("已载入", "ready");
+        setStatus("Loaded", "ready");
         resolve();
       },
       onLoadError: (event) => {
-        reject(new Error(String(event.data ?? "Rive 文件载入失败。")));
+        reject(new Error(String(event.data ?? "Failed to load the Rive file.")));
       },
     };
 
@@ -513,7 +513,7 @@ function readInstanceValue(instance: ViewModelInstance, property: ViewModelPrope
         return enumValue ? `${enumValue.value} · #${enumValue.valueIndex}` : "—";
       }
       case DataType.list:
-        return `${instance.list(property.name)?.length ?? 0} 项`;
+        return `${instance.list(property.name)?.length ?? 0} items`;
       case DataType.trigger:
         return "trigger";
       case DataType.image:
@@ -548,7 +548,7 @@ function populateMotionSelect(artboardName: string, preferred?: MotionSelection)
   const artboard = currentMetadata?.artboards.find((item) => item.name === artboardName);
 
   if (!artboard) {
-    motionSelect.append(new Option("无", motionValue({ kind: "none", name: "" })));
+    motionSelect.append(new Option("None", motionValue({ kind: "none", name: "" })));
     return;
   }
 
@@ -561,7 +561,7 @@ function populateMotionSelect(artboardName: string, preferred?: MotionSelection)
   }
 
   if (motionSelect.options.length === 0) {
-    motionSelect.append(new Option("静态画板", motionValue({ kind: "none", name: "" })));
+    motionSelect.append(new Option("Static artboard", motionValue({ kind: "none", name: "" })));
   }
 
   const preferredValue = preferred ? motionValue(preferred) : "";
@@ -604,15 +604,15 @@ function renderMetadata(metadata: RiveMetadata): void {
 }
 
 function renderMetrics(metadata: RiveMetadata): HTMLElement {
-  const section = createSection("文件");
+  const section = createSection("File");
   const grid = createElement("div", "metrics-grid");
 
   grid.append(
-    createMetric("名称", metadata.fileName),
-    createMetric("大小", formatBytes(metadata.fileSize)),
-    createMetric("画板", String(metadata.artboards.length)),
-    createMetric("stateMachineCount", String(countStateMachines(metadata.artboards))),
-    createMetric("ViewModel", String(metadata.viewModels.length)),
+    createMetric("Name", metadata.fileName),
+    createMetric("Size", formatBytes(metadata.fileSize)),
+    createMetric("Artboards", String(metadata.artboards.length)),
+    createMetric("State Machines", String(countStateMachines(metadata.artboards))),
+    createMetric("View Models", String(metadata.viewModels.length)),
     createMetric("Artboard Size", `${formatNumber(metadata.runtime.artboardWidth)} × ${formatNumber(metadata.runtime.artboardHeight)}`),
   );
 
@@ -626,18 +626,18 @@ function renderArtboards(artboards: ArtboardInfo[], activeArtboard: string): HTM
   const currentArtboard = getCurrentArtboard(artboards, activeArtboard);
 
   if (!currentArtboard) {
-    list.append(createEmptyLine("未读取到 artboard"));
+    list.append(createEmptyLine("No artboard found"));
     section.append(list);
     return section;
   }
 
   const item = createElement("article", "property-card is-active");
   item.append(createCardTitle(currentArtboard.name, "active"));
-  item.append(renderNameRow("Animations", currentArtboard.animations, "无"));
+  item.append(renderNameRow("Animations", currentArtboard.animations, "None"));
 
   const stateMachines = createElement("div", "nested-list");
   if (currentArtboard.stateMachines.length === 0) {
-    stateMachines.append(createEmptyLine("无 state machine"));
+    stateMachines.append(createEmptyLine("No state machines"));
   }
 
   for (const stateMachine of currentArtboard.stateMachines) {
@@ -666,7 +666,7 @@ function renderViewModels(viewModels: ViewModelInfo[], boundInstance: BoundInsta
   const list = createElement("div", "stack");
 
   if (viewModels.length === 0) {
-    list.append(createEmptyLine("未读取到 view model"));
+    list.append(createEmptyLine("No view models found"));
   }
 
   for (const viewModel of viewModels) {
@@ -675,7 +675,7 @@ function renderViewModels(viewModels: ViewModelInfo[], boundInstance: BoundInsta
     const properties = isAutoBound ? mergeBoundProperties(viewModel.properties, boundInstance.properties) : viewModel.properties;
     const item = createElement("article", isAutoBound ? "property-card highlight" : "property-card");
     item.append(createCardTitle(viewModel.name, titleMeta));
-    item.append(renderNameRow("Instances", viewModel.instanceNames, "无命名实例"));
+    item.append(renderNameRow("Instances", viewModel.instanceNames, "No named instances"));
     item.append(createSubhead("Properties"), renderProperties(properties));
     list.append(item);
   }
@@ -706,13 +706,13 @@ function renderDataEnums(dataEnums: DataEnumInfo[]): HTMLElement {
   const list = createElement("div", "stack");
 
   if (dataEnums.length === 0) {
-    list.append(createEmptyLine("未读取到 data enum"));
+    list.append(createEmptyLine("No data enums found"));
   }
 
   for (const dataEnum of dataEnums) {
     const item = createElement("article", "property-card");
     item.append(createCardTitle(dataEnum.name, `${dataEnum.values.length} values`));
-    item.append(renderNameRow("Values", dataEnum.values, "无"));
+    item.append(renderNameRow("Values", dataEnum.values, "None"));
     list.append(item);
   }
 
@@ -724,7 +724,7 @@ function renderProperties(properties: PropertyInfo[]): HTMLElement {
   const list = createElement("div", "property-list");
 
   if (properties.length === 0) {
-    list.append(createEmptyLine("无属性"));
+    list.append(createEmptyLine("No properties"));
     return list;
   }
 
@@ -764,14 +764,14 @@ function renderNameRow(label: string, names: string[], emptyText: string): HTMLE
 function renderError(message: string): void {
   propertiesPanel.replaceChildren();
   const card = createElement("div", "empty-card error");
-  card.append(createElement("strong", undefined, "载入失败"), createElement("span", undefined, message));
+  card.append(createElement("strong", undefined, "Load failed"), createElement("span", undefined, message));
   propertiesPanel.append(card);
 }
 
 function renderMetricsPlaceholder(): void {
   propertiesPanel.replaceChildren();
   const card = createElement("div", "empty-card");
-  card.append(createElement("strong", undefined, "等待文件"), createElement("span", undefined, "属性会显示在这里"));
+  card.append(createElement("strong", undefined, "Waiting for file"), createElement("span", undefined, "Properties will appear here"));
   propertiesPanel.append(card);
 }
 
@@ -822,7 +822,7 @@ function setControlsEnabled(enabled: boolean): void {
 }
 
 function syncPlaybackButton(runtime?: RuntimeInfo): void {
-  const label = runtime?.isPlaying ? "暂停" : "播放";
+  const label = runtime?.isPlaying ? "Pause" : "Play";
   playButton.title = label;
   playButton.setAttribute("aria-label", label);
   playButton.querySelector("span")?.replaceChildren(document.createTextNode(runtime?.isPlaying ? "\u275A\u275A" : "\u25B6"));
@@ -867,7 +867,7 @@ function formatDate(timestamp: number): string {
     return "—";
   }
 
-  return new Intl.DateTimeFormat("zh-CN", {
+  return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(timestamp);
@@ -878,7 +878,7 @@ function formatNumber(value: number): string {
     return "0";
   }
 
-  return new Intl.NumberFormat("zh-CN", {
+  return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 2,
   }).format(value);
 }

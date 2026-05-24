@@ -608,8 +608,6 @@ function renderMetrics(metadata: RiveMetadata): HTMLElement {
   const grid = createElement("div", "metrics-grid");
 
   grid.append(
-    createMetric("Name", metadata.fileName),
-    createMetric("Size", formatBytes(metadata.fileSize)),
     createMetric("Artboards", String(metadata.artboards.length)),
     createMetric("State Machines", String(countStateMachines(metadata.artboards))),
     createMetric("View Models", String(metadata.viewModels.length)),

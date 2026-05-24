@@ -147,7 +147,7 @@ select,
 
 .upload-arrow {
   position: absolute;
-  left: clamp(300px, 38vw, 690px);
+  left: clamp(250px, 32vw, 610px);
   bottom: -80px;
   z-index: 8;
   color: var(--ink);
@@ -345,12 +345,9 @@ h3 {
   min-height: 92px;
   padding: 15px;
   border: var(--stroke);
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.24) 0 50%, transparent 50%),
-    var(--pink);
-  background-size: 18px 100%;
-  box-shadow: 5px 5px 0 var(--ink);
-  color: #fff;
+  background: linear-gradient(90deg, #bdea24 0 50%, var(--acid) 50% 100%);
+  box-shadow: 8px 8px 0 var(--ink);
+  color: var(--ink);
   cursor: pointer;
   transform: rotate(0.4deg);
 }
@@ -371,11 +368,6 @@ h3 {
 
 .dropzone:hover,
 .dropzone.is-dragging {
-  background:
-    linear-gradient(90deg, rgba(17, 17, 17, 0.12) 0 50%, transparent 50%),
-    var(--acid);
-  box-shadow: 8px 8px 0 var(--ink);
-  color: var(--ink);
   transform: translate(-3px, -3px) rotate(-0.5deg);
 }
 

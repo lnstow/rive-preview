@@ -669,7 +669,7 @@ function renderViewModels(viewModels: ViewModelInfo[], boundInstance: BoundInsta
 
   for (const viewModel of viewModels) {
     const isAutoBound = boundInstance?.name === viewModel.name;
-    const titleMeta = isAutoBound ? `${viewModel.instanceCount} instances · auto bound` : `${viewModel.instanceCount} instances`;
+    const titleMeta = isAutoBound ? "auto bound" : "";
     const properties = isAutoBound ? mergeBoundProperties(viewModel.properties, boundInstance.properties) : viewModel.properties;
     const item = createElement("article", isAutoBound ? "property-card highlight" : "property-card");
     item.append(createCardTitle(viewModel.name, titleMeta));

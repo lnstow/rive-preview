@@ -500,6 +500,13 @@ select {
   font-weight: 900;
 }
 
+select:not(:disabled):hover,
+select:not(:disabled):active {
+  background: var(--acid);
+  box-shadow: 5px 5px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+
 select:not(:disabled):focus,
 .icon-button:not(:disabled):focus-visible,
 .dropzone:focus-within {
@@ -794,7 +801,6 @@ canvas {
   color: var(--ink);
   font-size: 1rem;
   line-height: 1.05;
-  text-transform: uppercase;
 }
 
 .card-title span {
@@ -884,7 +890,6 @@ canvas {
   box-shadow: 2px 2px 0 var(--ink);
   font-size: 0.7rem;
   font-weight: 950;
-  text-transform: uppercase;
 }
 
 .property-type {
@@ -923,7 +928,6 @@ canvas {
   font-size: 0.72rem;
   font-weight: 950;
   text-overflow: ellipsis;
-  text-transform: uppercase;
 }
 
 .chip:nth-child(4n + 1) {

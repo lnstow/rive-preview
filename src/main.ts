@@ -99,7 +99,6 @@ const canvas = getElement<HTMLCanvasElement>("riveCanvas");
 const canvasStage = getElement<HTMLDivElement>("canvasStage");
 const emptyState = getElement<HTMLDivElement>("emptyState");
 const propertiesPanel = getElement<HTMLDivElement>("propertiesPanel");
-const propertyCount = getElement<HTMLSpanElement>("propertyCount");
 const statusPill = getElement<HTMLDivElement>("statusPill");
 const artboardSelect = getElement<HTMLSelectElement>("artboardSelect");
 const motionSelect = getElement<HTMLSelectElement>("motionSelect");
@@ -515,7 +514,6 @@ function parseMotionValue(value: string): MotionSelection {
 
 function renderMetadata(metadata: RiveMetadata): void {
   propertiesPanel.replaceChildren();
-  propertyCount.textContent = `${countProperties(metadata)} 项`;
   syncPlaybackButton(metadata.runtime);
 
   propertiesPanel.append(
@@ -544,40 +542,44 @@ function renderMetrics(metadata: RiveMetadata): HTMLElement {
 }
 
 function renderArtboards(artboards: ArtboardInfo[], activeArtboard: string): HTMLElement {
-  const section = createSection("Artboards");
+  const section = createSection("Artboard");
   const list = createElement("div", "stack");
+  const currentArtboard = getCurrentArtboard(artboards, activeArtboard);
 
-  if (artboards.length === 0) {
+  if (!currentArtboard) {
     list.append(createEmptyLine("未读取到 artboard"));
+    section.append(list);
+    return section;
   }
 
-  for (const artboard of artboards) {
-    const item = createElement("article", artboard.name === activeArtboard ? "property-card is-active" : "property-card");
-    item.append(createCardTitle(artboard.name, artboard.name === activeArtboard ? "active" : ""));
-    item.append(renderNameRow("Animations", artboard.animations, "无"));
+  const item = createElement("article", "property-card is-active");
+  item.append(createCardTitle(currentArtboard.name, "active"));
+  item.append(renderNameRow("Animations", currentArtboard.animations, "无"));
 
-    const stateMachines = createElement("div", "nested-list");
-    if (artboard.stateMachines.length === 0) {
-      stateMachines.append(createEmptyLine("无 state machine"));
-    }
-
-    for (const stateMachine of artboard.stateMachines) {
-      const stateItem = createElement("div", "nested-item");
-      stateItem.append(createCardTitle(stateMachine.name, `${stateMachine.inputs.length} inputs`, "small"));
-      stateItem.append(renderProperties(stateMachine.inputs.map((input) => ({
-        name: input.name,
-        type: input.type,
-        value: input.initialValue,
-      }))));
-      stateMachines.append(stateItem);
-    }
-
-    item.append(createSubhead("State Machines"), stateMachines);
-    list.append(item);
+  const stateMachines = createElement("div", "nested-list");
+  if (currentArtboard.stateMachines.length === 0) {
+    stateMachines.append(createEmptyLine("无 state machine"));
   }
 
+  for (const stateMachine of currentArtboard.stateMachines) {
+    const stateItem = createElement("div", "nested-item");
+    stateItem.append(createCardTitle(stateMachine.name, `${stateMachine.inputs.length} inputs`, "small"));
+    stateItem.append(renderProperties(stateMachine.inputs.map((input) => ({
+      name: input.name,
+      type: input.type,
+      value: input.initialValue,
+    }))));
+    stateMachines.append(stateItem);
+  }
+
+  item.append(createSubhead("State Machines"), stateMachines);
+  list.append(item);
   section.append(list);
   return section;
+}
+
+function getCurrentArtboard(artboards: ArtboardInfo[], activeArtboard: string): ArtboardInfo | undefined {
+  return artboards.find((artboard) => artboard.name === activeArtboard) ?? artboards[0];
 }
 
 function renderViewModels(viewModels: ViewModelInfo[], boundInstance: BoundInstanceInfo | null): HTMLElement {
@@ -589,22 +591,35 @@ function renderViewModels(viewModels: ViewModelInfo[], boundInstance: BoundInsta
   }
 
   for (const viewModel of viewModels) {
-    const item = createElement("article", "property-card");
-    item.append(createCardTitle(viewModel.name, `${viewModel.instanceCount} instances`));
+    const isAutoBound = boundInstance?.name === viewModel.name;
+    const titleMeta = isAutoBound ? `${viewModel.instanceCount} instances · auto bound` : `${viewModel.instanceCount} instances`;
+    const properties = isAutoBound ? mergeBoundProperties(viewModel.properties, boundInstance.properties) : viewModel.properties;
+    const item = createElement("article", isAutoBound ? "property-card highlight" : "property-card");
+    item.append(createCardTitle(viewModel.name, titleMeta));
     item.append(renderNameRow("Instances", viewModel.instanceNames, "无命名实例"));
-    item.append(createSubhead("Properties"), renderProperties(viewModel.properties));
+    item.append(createSubhead("Properties"), renderProperties(properties));
     list.append(item);
-  }
-
-  if (boundInstance) {
-    const bound = createElement("article", "property-card highlight");
-    bound.append(createCardTitle(boundInstance.name, "auto bound"));
-    bound.append(renderProperties(boundInstance.properties));
-    list.append(bound);
   }
 
   section.append(list);
   return section;
+}
+
+function mergeBoundProperties(properties: PropertyInfo[], boundProperties: PropertyInfo[]): PropertyInfo[] {
+  const boundByName = new Map(boundProperties.map((property) => [property.name, property]));
+  const merged = properties.map((property) => ({
+    ...property,
+    value: boundByName.get(property.name)?.value ?? property.value,
+  }));
+  const knownNames = new Set(properties.map((property) => property.name));
+
+  for (const boundProperty of boundProperties) {
+    if (!knownNames.has(boundProperty.name)) {
+      merged.push(boundProperty);
+    }
+  }
+
+  return merged;
 }
 
 function renderDataEnums(dataEnums: DataEnumInfo[]): HTMLElement {
@@ -669,7 +684,6 @@ function renderNameRow(label: string, names: string[], emptyText: string): HTMLE
 
 function renderError(message: string): void {
   propertiesPanel.replaceChildren();
-  propertyCount.textContent = "0 项";
   const card = createElement("div", "empty-card error");
   card.append(createElement("strong", undefined, "载入失败"), createElement("span", undefined, message));
   propertiesPanel.append(card);
@@ -746,18 +760,6 @@ function inputTypeName(type: StateMachineInputType): string {
     default:
       return `input ${type}`;
   }
-}
-
-function countProperties(metadata: RiveMetadata): number {
-  const inputCount = metadata.artboards.reduce(
-    (total, artboard) => total + artboard.stateMachines.reduce((sum, stateMachine) => sum + stateMachine.inputs.length, 0),
-    0,
-  );
-  const viewModelPropertyCount = metadata.viewModels.reduce((total, viewModel) => total + viewModel.properties.length, 0);
-  const enumValueCount = metadata.dataEnums.reduce((total, dataEnum) => total + dataEnum.values.length, 0);
-  const boundCount = metadata.boundInstance?.properties.length ?? 0;
-
-  return metadata.artboards.length + inputCount + viewModelPropertyCount + enumValueCount + boundCount;
 }
 
 function countStateMachines(artboards: ArtboardInfo[]): number {

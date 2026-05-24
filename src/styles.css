@@ -279,9 +279,27 @@ canvas {
   height: 100%;
 }
 
+.artboard-frame {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: 1;
+  border: 2px solid #f25c54;
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.86),
+    0 0 0 4px rgba(242, 92, 84, 0.14);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.artboard-frame[hidden] {
+  display: none;
+}
+
 .empty-state {
   position: absolute;
   inset: 20px;
+  z-index: 2;
   display: grid;
   place-items: center;
   align-content: center;

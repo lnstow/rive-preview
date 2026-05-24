@@ -97,6 +97,7 @@ const fileInput = getElement<HTMLInputElement>("fileInput");
 const fileMeta = getElement<HTMLSpanElement>("fileMeta");
 const canvas = getElement<HTMLCanvasElement>("riveCanvas");
 const canvasStage = getElement<HTMLDivElement>("canvasStage");
+const artboardFrame = getElement<HTMLDivElement>("artboardFrame");
 const emptyState = getElement<HTMLDivElement>("emptyState");
 const propertiesPanel = getElement<HTMLDivElement>("propertiesPanel");
 const statusPill = getElement<HTMLDivElement>("statusPill");
@@ -164,6 +165,7 @@ fitSelect.addEventListener("change", () => {
     alignment: Alignment.Center,
   });
   activeRive.resizeDrawingSurfaceToCanvas();
+  updateArtboardFrame();
   refreshMetadata();
 });
 
@@ -182,6 +184,7 @@ playButton.addEventListener("click", () => {
 
 const resizeObserver = new ResizeObserver(() => {
   activeRive?.resizeDrawingSurfaceToCanvas();
+  updateArtboardFrame();
 });
 resizeObserver.observe(canvasStage);
 
@@ -240,6 +243,7 @@ function createPreview(riveFile: RiveFile, selection: InitialSelection): Promise
 
         activeRive.resizeDrawingSurfaceToCanvas();
         currentMetadata = collectMetadata(activeRive, currentFile);
+        updateArtboardFrame(currentMetadata.runtime);
         syncControls(currentMetadata, selection);
         renderMetadata(currentMetadata);
         emptyState.hidden = true;
@@ -270,6 +274,7 @@ function cleanupActiveRive(): void {
   activeRiveFile = null;
 
   currentMetadata = null;
+  hideArtboardFrame();
 }
 
 function resetPreviewFromControls(): void {
@@ -292,6 +297,7 @@ function resetPreviewFromControls(): void {
 
   activeRive.reset(params);
   activeRive.resizeDrawingSurfaceToCanvas();
+  updateArtboardFrame();
   refreshMetadata();
 }
 
@@ -301,7 +307,80 @@ function refreshMetadata(): void {
   }
 
   currentMetadata = collectMetadata(activeRive, currentFile);
+  updateArtboardFrame(currentMetadata.runtime);
   renderMetadata(currentMetadata);
+}
+
+function updateArtboardFrame(runtime = currentMetadata?.runtime): void {
+  if (!runtime) {
+    hideArtboardFrame();
+    return;
+  }
+
+  const artboardWidth = runtime.artboardWidth;
+  const artboardHeight = runtime.artboardHeight;
+  const stageWidth = canvasStage.clientWidth;
+  const stageHeight = canvasStage.clientHeight;
+
+  if (artboardWidth <= 0 || artboardHeight <= 0 || stageWidth <= 0 || stageHeight <= 0) {
+    hideArtboardFrame();
+    return;
+  }
+
+  const { width, height } = getFittedArtboardSize(
+    artboardWidth,
+    artboardHeight,
+    stageWidth,
+    stageHeight,
+    fitSelect.value as Fit,
+  );
+
+  artboardFrame.hidden = false;
+  artboardFrame.style.width = `${width}px`;
+  artboardFrame.style.height = `${height}px`;
+  artboardFrame.title = `${formatNumber(artboardWidth)} × ${formatNumber(artboardHeight)}`;
+}
+
+function hideArtboardFrame(): void {
+  artboardFrame.hidden = true;
+  artboardFrame.removeAttribute("style");
+  artboardFrame.removeAttribute("title");
+}
+
+function getFittedArtboardSize(
+  artboardWidth: number,
+  artboardHeight: number,
+  stageWidth: number,
+  stageHeight: number,
+  fit: Fit,
+): { width: number; height: number } {
+  const widthScale = stageWidth / artboardWidth;
+  const heightScale = stageHeight / artboardHeight;
+
+  switch (fit) {
+    case Fit.Cover:
+      return scaleArtboard(artboardWidth, artboardHeight, Math.max(widthScale, heightScale));
+    case Fit.Fill:
+      return { width: stageWidth, height: stageHeight };
+    case Fit.FitWidth:
+      return scaleArtboard(artboardWidth, artboardHeight, widthScale);
+    case Fit.FitHeight:
+      return scaleArtboard(artboardWidth, artboardHeight, heightScale);
+    case Fit.None:
+      return { width: artboardWidth, height: artboardHeight };
+    case Fit.ScaleDown:
+      return scaleArtboard(artboardWidth, artboardHeight, Math.min(1, widthScale, heightScale));
+    case Fit.Contain:
+    default:
+      return scaleArtboard(artboardWidth, artboardHeight, Math.min(widthScale, heightScale));
+  }
+}
+
+function scaleArtboard(width: number, height: number, scale: number): { width: number; height: number } {
+  return {
+    width: width * scale,
+    height: height * scale,
+  };
 }
 
 function getInitialSelection(riveFile: RiveFile): InitialSelection {

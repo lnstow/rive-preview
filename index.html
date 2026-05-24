@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rive Preview</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Rive WebGL2</p>
+          <h1>Rive Preview</h1>
+        </div>
+        <div id="statusPill" class="status-pill" data-tone="idle">未载入</div>
+      </header>
+
+      <main class="workspace">
+        <section class="preview-pane" aria-label="Rive 预览">
+          <label id="dropzone" class="dropzone" for="fileInput">
+            <input id="fileInput" type="file" accept=".riv" />
+            <span class="drop-icon" aria-hidden="true">&#8679;</span>
+            <span>
+              <span class="drop-title">选择 .riv 文件</span>
+              <span id="fileMeta" class="drop-meta">等待上传</span>
+            </span>
+          </label>
+
+          <div class="toolbar" aria-label="预览控制">
+            <label class="field">
+              <span>画板</span>
+              <select id="artboardSelect" disabled></select>
+            </label>
+            <label class="field">
+              <span>播放源</span>
+              <select id="motionSelect" disabled></select>
+            </label>
+            <label class="field compact">
+              <span>适配</span>
+              <select id="fitSelect" disabled>
+                <option value="contain">Contain</option>
+                <option value="cover">Cover</option>
+                <option value="fill">Fill</option>
+                <option value="fitWidth">Fit Width</option>
+                <option value="fitHeight">Fit Height</option>
+                <option value="scaleDown">Scale Down</option>
+                <option value="none">None</option>
+              </select>
+            </label>
+            <div class="button-group" aria-label="播放按钮">
+              <button id="playButton" class="icon-button" type="button" title="播放" aria-label="播放" disabled>
+                <span aria-hidden="true">&#9658;</span>
+              </button>
+              <button id="pauseButton" class="icon-button" type="button" title="暂停" aria-label="暂停" disabled>
+                <span aria-hidden="true">&#10074;&#10074;</span>
+              </button>
+              <button id="stopButton" class="icon-button" type="button" title="停止" aria-label="停止" disabled>
+                <span aria-hidden="true">&#9632;</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="canvasStage" class="canvas-stage">
+            <canvas id="riveCanvas" width="1280" height="860"></canvas>
+            <div id="emptyState" class="empty-state">
+              <strong>Rive</strong>
+              <span>.riv</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="properties-pane" aria-label="Rive 属性">
+          <div class="properties-head">
+            <div>
+              <p class="eyebrow">Inspect</p>
+              <h2>Rive 属性</h2>
+            </div>
+            <span id="propertyCount" class="property-count">0 项</span>
+          </div>
+          <div id="propertiesPanel" class="properties-panel">
+            <div class="empty-card">
+              <strong>等待文件</strong>
+              <span>属性会显示在这里</span>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
